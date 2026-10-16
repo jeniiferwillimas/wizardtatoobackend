@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Backend.Models;
@@ -12,11 +11,13 @@ public class AuthService
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IConfiguration _config;
+    private readonly EmailService _email;
 
-    public AuthService(UserManager<AppUser> userManager, IConfiguration config)
+    public AuthService(UserManager<AppUser> userManager, IConfiguration config, EmailService email)
     {
         _userManager = userManager;
         _config = config;
+        _email = email;
     }
 
     public async Task<(bool Success, string? Error, AuthResponseDto? Data)> RegisterAsync(RegisterDto dto)
@@ -77,62 +78,35 @@ public class AuthService
         });
     }
 
-    public async Task<(bool Success, string? Error, AuthResponseDto? Data)> GoogleLoginAsync(GoogleAuthDto dto)
-    {
-        GoogleJsonWebSignature.Payload payload;
-        try
-        {
-            var settings = new GoogleJsonWebSignature.ValidationSettings
-            {
-                Audience = new[] { _config["Google:ClientId"]! }
-            };
-            payload = await GoogleJsonWebSignature.ValidateAsync(dto.Credential, settings);
-        }
-        catch
-        {
-            return (false, "Invalid Google token.", null);
-        }
-
-        var user = await _userManager.FindByEmailAsync(payload.Email);
-        if (user == null)
-        {
-            user = new AppUser
-            {
-                UserName = payload.Email,
-                Email = payload.Email,
-                FullName = payload.Name ?? payload.Email,
-                EmailConfirmed = true
-            };
-            var result = await _userManager.CreateAsync(user);
-            if (!result.Succeeded)
-            {
-                var errors = string.Join(" ", result.Errors.Select(e => e.Description));
-                return (false, errors, null);
-            }
-            await _userManager.AddToRoleAsync(user, "NormalUser");
-        }
-
-        var roles = await _userManager.GetRolesAsync(user);
-        var token = await GenerateJwtToken(user);
-        return (true, null, new AuthResponseDto
-        {
-            Token = token,
-            Email = user.Email!,
-            Name = user.FullName,
-            UserId = user.Id,
-            Role = roles.FirstOrDefault() ?? "NormalUser"
-        });
-    }
-
-    public async Task<(bool Success, string? Error, string? ResetToken)> ForgotPasswordAsync(ForgotPasswordDto dto)
+    public async Task<(bool Success, string? Error)> ForgotPasswordAsync(ForgotPasswordDto dto)
     {
         var user = await _userManager.FindByEmailAsync(dto.Email);
         if (user == null)
-            return (true, null, null);
+            return (true, null);
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        // In production, send this token via email. For dev, return it in the response.
-        return (true, null, token);
+        var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:3000";
+        var resetLink = $"{frontendUrl}/reset-password?email={Uri.EscapeDataString(dto.Email)}&token={Uri.EscapeDataString(token)}";
+
+        var email = dto.Email;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _email.SendAsync(email, "Reset Your Password", $"""
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
+                  <h1 style="font-size: 24px; margin: 0 0 16px;">Reset Your Password</h1>
+                  <p style="color: #666; margin: 0 0 24px;">Click the button below to reset your password. This link expires in 24 hours.</p>
+                  <a href="{resetLink}" style="display: inline-block; background: #16a34a; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset Password</a>
+                  <p style="color: #999; font-size: 12px; margin-top: 32px;">If you didn't request this, you can safely ignore this email.</p>
+                  <p style="color: #999; font-size: 12px;">— TattooNest</p>
+                </div>
+                """);
+            }
+            catch { }
+        });
+
+        return (true, null);
     }
 
     public async Task<(bool Success, string? Error)> ResetPasswordAsync(ResetPasswordDto dto)

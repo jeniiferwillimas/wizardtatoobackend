@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Backend.Models;
 using Backend.Services;
 
@@ -9,6 +10,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
@@ -40,25 +42,14 @@ public class AuthController : ControllerBase
         return Ok(data);
     }
 
-    [HttpPost("google")]
-    public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthDto dto)
-    {
-        var (success, error, data) = await _authService.GoogleLoginAsync(dto);
-        if (!success)
-            return Unauthorized(new { error });
-
-        return Ok(data);
-    }
-
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
     {
-        var (success, error, resetToken) = await _authService.ForgotPasswordAsync(dto);
+        var (success, error) = await _authService.ForgotPasswordAsync(dto);
         if (!success)
             return BadRequest(new { error });
 
-        // In production, the token would be emailed. For dev, include it in the response.
-        return Ok(new { message = "If an account with that email exists, a reset link has been sent.", resetToken });
+        return Ok(new { message = "If an account with that email exists, a reset link has been sent." });
     }
 
     [HttpPost("reset-password")]
