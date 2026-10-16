@@ -17,6 +17,7 @@ public class ArtistController : ControllerBase
     {
         var query = _db.Artists
             .Include(a => a.ArtistStyles)
+            .Include(a => a.PortfolioImages.OrderBy(i => i.OrderNo))
             .OrderBy(a => a.OrderNo)
             .AsQueryable();
 
@@ -44,7 +45,9 @@ public class ArtistController : ControllerBase
                 a.Followers,
                 a.PriceMin,
                 a.PriceMax,
+                a.ProfileImageUrl,
                 Styles = a.ArtistStyles.Select(s => s.StyleName).ToList(),
+                Images = a.PortfolioImages.Take(6).Select(i => new { i.ImageUrl, i.Price }).ToList(),
             })
             .ToListAsync();
 
