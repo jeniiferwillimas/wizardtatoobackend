@@ -8,7 +8,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "SuperAdminOnly")]
+[Authorize(Policy = "AdminOrSuperAdmin")]
 public class RoleController : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager;
@@ -52,19 +52,57 @@ public class RoleController : ControllerBase
     [HttpPut("users/{userId}/role")]
     public async Task<IActionResult> UpdateUserRole(string userId, [FromBody] UpdateRoleDto dto)
     {
+        var callerId = _userManager.GetUserId(User);
+        if (userId == callerId)
+            return BadRequest(new { error = "You cannot change your own role." });
+
+        var caller = await _userManager.FindByIdAsync(callerId!);
+        var callerRoles = caller != null ? await _userManager.GetRolesAsync(caller) : [];
+        var callerIsSuperAdmin = callerRoles.Contains("SuperAdmin");
+
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
             return NotFound(new { error = "User not found." });
 
-        var allowedRoles = new[] { "SuperAdmin", "Artist", "NormalUser" };
-        if (!allowedRoles.Contains(dto.Role))
-            return BadRequest(new { error = "Invalid role. Allowed: SuperAdmin, Artist, NormalUser." });
+        var targetRoles = await _userManager.GetRolesAsync(user);
+        if (targetRoles.Contains("SuperAdmin") && !callerIsSuperAdmin)
+            return Forbid();
 
-        var currentRoles = await _userManager.GetRolesAsync(user);
-        await _userManager.RemoveFromRolesAsync(user, currentRoles);
+        if (dto.Role == "SuperAdmin" && !callerIsSuperAdmin)
+            return BadRequest(new { error = "Only SuperAdmins can assign the SuperAdmin role." });
+
+        var allowedRoles = new[] { "SuperAdmin", "Admin", "Artist", "NormalUser" };
+        if (!allowedRoles.Contains(dto.Role))
+            return BadRequest(new { error = "Invalid role. Allowed: SuperAdmin, Admin, Artist, NormalUser." });
+
+        await _userManager.RemoveFromRolesAsync(user, targetRoles);
         await _userManager.AddToRoleAsync(user, dto.Role);
 
         return Ok(new { message = $"User role updated to {dto.Role}.", userId = user.Id, role = dto.Role });
+    }
+
+    [HttpDelete("users/{userId}")]
+    public async Task<IActionResult> DeleteUser(string userId)
+    {
+        var callerId = _userManager.GetUserId(User);
+        if (userId == callerId)
+            return BadRequest(new { error = "You cannot delete your own account." });
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return NotFound(new { error = "User not found." });
+
+        var caller = await _userManager.FindByIdAsync(callerId!);
+        var callerRoles = caller != null ? await _userManager.GetRolesAsync(caller) : [];
+        var targetRoles = await _userManager.GetRolesAsync(user);
+        if (targetRoles.Contains("SuperAdmin") && !callerRoles.Contains("SuperAdmin"))
+            return Forbid();
+
+        var result = await _userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+            return BadRequest(new { error = "Failed to delete user." });
+
+        return Ok(new { success = true });
     }
 }
 

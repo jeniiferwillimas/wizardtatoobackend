@@ -52,6 +52,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdmin"))
+    .AddPolicy("AdminOrSuperAdmin", policy => policy.RequireRole("Admin", "SuperAdmin"))
     .AddPolicy("ArtistOnly", policy => policy.RequireRole("Artist"))
     .AddPolicy("ArtistOrSuperAdmin", policy => policy.RequireRole("SuperAdmin", "Artist"));
 
@@ -102,16 +103,17 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    string[] roles = ["SuperAdmin", "Artist", "NormalUser"];
+    string[] roles = ["SuperAdmin", "Admin", "Artist", "NormalUser"];
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole(role));
     }
 
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
     await ModuleSeeder.SeedAsync(db);
     await PublicDataSeeder.SeedAsync(db);
 }
