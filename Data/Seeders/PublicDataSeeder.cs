@@ -18,8 +18,8 @@ public static class PublicDataSeeder
     {
         var stats = new (string Key, string Value, string Label, int Order)[]
         {
-            ("artists", "286", "Artists", 0),
-            ("tattoos", "1,430", "Tattoos", 1),
+            ("artists", "1,540", "Artists", 0),
+            ("tattoos", "9,240", "Tattoos", 1),
             ("styles", "12", "Styles", 2),
         };
 
@@ -348,19 +348,20 @@ public static class PublicDataSeeder
 
     private static async Task SeedFillerArtists(AppDbContext db)
     {
-        const int target = 50;
+        const int targetPerCity = 20;
+
         var styleNames = new[]
         {
             "Fine line", "Traditional", "Black & grey", "Minimalist",
             "Neo Traditional", "Illustrative", "Geometric", "Watercolor",
-            "Dotwork", "Anime", "Japanese"
+            "Dotwork", "Anime", "Japanese", "Realism"
         };
 
         var affinities = new Dictionary<string, string[]>
         {
             ["Fine line"] = ["Minimalist", "Dotwork", "Illustrative"],
             ["Traditional"] = ["Neo Traditional", "Japanese", "Illustrative"],
-            ["Black & grey"] = ["Traditional", "Japanese", "Illustrative"],
+            ["Black & grey"] = ["Traditional", "Realism", "Illustrative"],
             ["Minimalist"] = ["Fine line", "Geometric", "Dotwork"],
             ["Neo Traditional"] = ["Traditional", "Illustrative", "Japanese"],
             ["Illustrative"] = ["Fine line", "Watercolor", "Traditional"],
@@ -369,6 +370,7 @@ public static class PublicDataSeeder
             ["Dotwork"] = ["Geometric", "Minimalist", "Fine line"],
             ["Anime"] = ["Illustrative", "Watercolor", "Japanese"],
             ["Japanese"] = ["Traditional", "Black & grey", "Illustrative"],
+            ["Realism"] = ["Black & grey", "Illustrative", "Traditional"],
         };
 
         var bios = new Dictionary<string, string>
@@ -384,6 +386,7 @@ public static class PublicDataSeeder
             ["Dotwork"] = "Builds intricate patterns and images entirely from meticulously placed dots.",
             ["Anime"] = "Brings Japanese animation characters to life with bold colors and dynamic compositions.",
             ["Japanese"] = "Practices traditional irezumi with flowing compositions and rich cultural symbolism.",
+            ["Realism"] = "Creates photorealistic tattoos capturing every detail with stunning precision.",
         };
 
         var firstNames = new[]
@@ -395,6 +398,11 @@ public static class PublicDataSeeder
             "Vera", "Vince", "Wren", "Xander", "Yuki", "Zara", "Aiden", "Bianca", "Cole", "Daria",
             "Eli", "Freya", "Gus", "Hana", "Iris", "Jin", "Koda", "Lena", "Malik", "Nova",
             "Orion", "Phoenix", "Raven", "Sky", "Thiago", "Uma", "Vega", "Wolf", "Yara", "Zen",
+            "Anya", "Bruno", "Cleo", "Dmitri", "Esme", "Felix", "Gia", "Haruki", "Ines", "Jasper",
+            "Kayo", "Liam", "Mila", "Niko", "Opal", "Pavel", "Ren", "Sadie", "Teo", "Ursa",
+            "Vanya", "Willow", "Xiomara", "Yael", "Zion", "Amara", "Beck", "Cian", "Devi", "Enzo",
+            "Flora", "Gael", "Hailey", "Idris", "Juno", "Kenji", "Lucia", "Matteo", "Nori", "Ozzy",
+            "Pia", "Quill", "Rumi", "Saga", "Tala", "Ulani", "Vita", "Wade", "Xena", "Yuto",
         };
 
         var lastNames = new[]
@@ -406,19 +414,28 @@ public static class PublicDataSeeder
             "Weber", "Fischer", "Jung", "Hayashi", "Okafor", "Diaz", "Roth", "Crane", "Pine", "Ash",
             "Reed", "Frost", "Vale", "Marsh", "Wolfe", "Grant", "Shaw", "Bell", "Hayes", "Ward",
             "Ray", "Dunn", "West", "Nash", "Kirk", "Tate", "Lowe", "Page", "Blair", "Sage",
+            "Cole", "Voss", "Zane", "Kohl", "Lark", "Nova", "Peak", "Rune", "Wynn", "York",
+            "Falk", "Hale", "Jett", "Knox", "Lane", "Moss", "Noel", "Oak", "Quay", "Rowe",
+            "Steele", "Thorne", "Vega", "Wilde", "Yates", "Brook", "Caine", "Dusk", "Eyre", "Flint",
+            "Grove", "Hawk", "Isle", "Jade", "Keel", "Lyon", "Moor", "North", "Onyx", "Pyre",
+            "Ridge", "Slate", "Troy", "Vale", "Wren", "Zephyr", "Arrow", "Blaze", "Cliff", "Dawn",
         };
 
         var locations = new (string City, string Country)[]
         {
-            ("Miami", "United States"), ("Denver", "United States"), ("Seattle", "United States"),
+            ("New York", "United States"), ("Los Angeles", "United States"), ("Miami", "United States"),
+            ("Chicago", "United States"), ("Denver", "United States"), ("Seattle", "United States"),
             ("Nashville", "United States"), ("Atlanta", "United States"), ("Boston", "United States"),
             ("Dallas", "United States"), ("Detroit", "United States"), ("Honolulu", "United States"),
             ("Minneapolis", "United States"), ("Phoenix", "United States"), ("Charlotte", "United States"),
+            ("Portland", "United States"), ("Austin", "United States"), ("San Diego", "United States"),
+            ("San Francisco", "United States"), ("Philadelphia", "United States"),
+            ("Brooklyn", "United States"), ("Keene", "United States"),
             ("London", "United Kingdom"), ("Manchester", "United Kingdom"), ("Edinburgh", "United Kingdom"),
             ("Paris", "France"), ("Lyon", "France"), ("Marseille", "France"),
             ("Berlin", "Germany"), ("Munich", "Germany"), ("Hamburg", "Germany"),
-            ("Barcelona", "Spain"), ("Madrid", "Spain"), ("Seville", "Spain"),
-            ("Milan", "Italy"), ("Rome", "Italy"), ("Naples", "Italy"),
+            ("Barcelona", "Spain"), ("Madrid", "Spain"), ("Seville", "Spain"), ("Valencia", "Spain"), ("Alicante", "Spain"),
+            ("Milan", "Italy"), ("Rome", "Italy"), ("Florence", "Italy"), ("Piacenza", "Italy"),
             ("Tokyo", "Japan"), ("Osaka", "Japan"), ("Kyoto", "Japan"),
             ("Seoul", "South Korea"), ("Busan", "South Korea"),
             ("Taipei", "Taiwan"), ("Bangkok", "Thailand"),
@@ -430,29 +447,55 @@ public static class PublicDataSeeder
             ("Amsterdam", "Netherlands"), ("Copenhagen", "Denmark"), ("Stockholm", "Sweden"),
             ("Oslo", "Norway"), ("Lisbon", "Portugal"), ("Prague", "Czech Republic"),
             ("Budapest", "Hungary"), ("Athens", "Greece"), ("Istanbul", "Turkey"),
-            ("Moscow", "Russia"), ("Dubai", "UAE"), ("Mumbai", "India"),
-            ("Beijing", "China"), ("Shanghai", "China"), ("Singapore", "Singapore"),
+            ("Moscow", "Russia"), ("Saint Petersburg", "Russia"), ("Sevastopol", "Russia"),
+            ("Dubai", "UAE"), ("Mumbai", "India"),
+            ("Beijing", "China"), ("Shanghai", "China"), ("Hong Kong", "China"),
+            ("Singapore", "Singapore"), ("Warsaw", "Poland"),
         };
 
-        var allStyleEntries = await db.ArtistStyles.ToListAsync();
-        var counts = styleNames.ToDictionary(s => s, s => allStyleEntries.Count(a => a.StyleName == s));
-        var existingSlugs = new HashSet<string>(await db.Artists.Select(a => a.Slug).ToListAsync());
-        var maxOrder = await db.Artists.MaxAsync(a => (int?)a.OrderNo) ?? 0;
+        var existingArtists = await db.Artists.ToListAsync();
+        var cityCounts = new Dictionary<string, int>();
+        foreach (var a in existingArtists)
+        {
+            cityCounts.TryGetValue(a.City, out var c);
+            cityCounts[a.City] = c + 1;
+        }
+        foreach (var loc in locations)
+        {
+            if (!cityCounts.ContainsKey(loc.City))
+                cityCounts[loc.City] = 0;
+        }
+
+        var existingSlugs = new HashSet<string>(existingArtists.Select(a => a.Slug));
+        var maxOrder = existingArtists.Count > 0 ? existingArtists.Max(a => a.OrderNo) : 0;
 
         var rng = new Random(777);
         var orderNo = maxOrder + 1;
         var nameIdx = 0;
 
-        var sortedStyles = styleNames.OrderByDescending(s => target - counts[s]).ToArray();
+        var locationLookup = locations.ToDictionary(l => l.City, l => l.Country);
 
-        foreach (var style in sortedStyles)
+        var citiesToFill = cityCounts
+            .Where(kv => kv.Value < targetPerCity)
+            .OrderBy(kv => kv.Value)
+            .Select(kv => kv.Key)
+            .ToList();
+
+        foreach (var city in citiesToFill)
         {
-            while (counts[style] < target)
+            var needed = targetPerCity - cityCounts[city];
+            var country = locationLookup.GetValueOrDefault(city, "Unknown");
+            if (country == "Unknown")
             {
-                var secondary = affinities[style]
-                    .Where(s => counts[s] < target)
-                    .OrderByDescending(s => target - counts[s])
-                    .FirstOrDefault() ?? affinities[style][0];
+                var existing = existingArtists.FirstOrDefault(a => a.City == city);
+                if (existing != null) country = existing.Country;
+            }
+
+            for (int n = 0; n < needed; n++)
+            {
+                var styleIdx = (nameIdx + n) % styleNames.Length;
+                var primaryStyle = styleNames[styleIdx];
+                var secondaryStyle = affinities[primaryStyle][(nameIdx + n) % affinities[primaryStyle].Length];
 
                 var fn = firstNames[nameIdx % firstNames.Length];
                 var ln = lastNames[(nameIdx / firstNames.Length + nameIdx) % lastNames.Length];
@@ -467,7 +510,6 @@ public static class PublicDataSeeder
                 }
                 existingSlugs.Add(slug);
 
-                var loc = locations[rng.Next(locations.Length)];
                 var rating = Math.Round(4.2 + rng.NextDouble() * 0.7, 1);
                 var priceMin = (100 + rng.Next(0, 350)) / 50 * 50;
                 var priceMax = priceMin + (200 + rng.Next(0, 600)) / 50 * 50;
@@ -476,9 +518,9 @@ public static class PublicDataSeeder
 
                 var artist = new Artist
                 {
-                    Name = name, Slug = slug, City = loc.City, Country = loc.Country,
+                    Name = name, Slug = slug, City = city, Country = country,
                     Rating = rating, IsStudio = false, OrderNo = orderNo++,
-                    Bio = bios[style],
+                    Bio = bios[primaryStyle],
                     InstagramHandle = slug.Replace("-", ""),
                     Followers = $"{followersK}K",
                     PriceMin = priceMin,
@@ -486,17 +528,14 @@ public static class PublicDataSeeder
                     PieceCount = pieces,
                     ProfileImageUrl = $"/images/avatars/avatar-{(nameIdx % 30) + 1}.jpg",
                 };
-                artist.ArtistStyles.Add(new ArtistStyle { StyleName = style });
-                if (secondary != style)
-                {
-                    artist.ArtistStyles.Add(new ArtistStyle { StyleName = secondary });
-                    counts[secondary]++;
-                }
+                artist.ArtistStyles.Add(new ArtistStyle { StyleName = primaryStyle });
+                if (secondaryStyle != primaryStyle)
+                    artist.ArtistStyles.Add(new ArtistStyle { StyleName = secondaryStyle });
                 db.Artists.Add(artist);
 
-                counts[style]++;
                 nameIdx++;
             }
+            cityCounts[city] = targetPerCity;
         }
 
         await db.SaveChangesAsync();
@@ -538,7 +577,8 @@ public static class PublicDataSeeder
         }
         await db.SaveChangesAsync();
 
-        var globalUsed = new HashSet<string>();
+        const int variantsPerStyle = 155;
+        const int imageCount = 6;
 
         for (int artistIdx = 0; artistIdx < allArtists.Count; artistIdx++)
         {
@@ -550,9 +590,7 @@ public static class PublicDataSeeder
                 .Distinct()
                 .ToList();
 
-            const int variantsPerStyle = 155;
-            const int imageCount = 6;
-            var chosen = new List<string>();
+            var chosen = new HashSet<string>();
             var artistRng = new Random(artistIdx * 9973 + 7919);
 
             foreach (var slug in artistStyleSlugs)
@@ -565,11 +603,7 @@ public static class PublicDataSeeder
                 foreach (var c in candidates)
                 {
                     if (chosen.Count >= imageCount) break;
-                    if (!globalUsed.Contains(c))
-                    {
-                        chosen.Add(c);
-                        globalUsed.Add(c);
-                    }
+                    chosen.Add(c);
                 }
             }
 
@@ -586,43 +620,25 @@ public static class PublicDataSeeder
                     foreach (var c in candidates)
                     {
                         if (chosen.Count >= imageCount) break;
-                        if (!globalUsed.Contains(c))
-                        {
-                            chosen.Add(c);
-                            globalUsed.Add(c);
-                        }
+                        chosen.Add(c);
                     }
-                }
-            }
-
-            // Fallback: if globalUsed exhausted all 600, pick unused-by-this-artist
-            if (chosen.Count < imageCount)
-            {
-                var allImages = StyleSlugs
-                    .SelectMany(s => Enumerable.Range(1, variantsPerStyle).Select(n => $"/images/portfolio/{s}-{n}.jpg"))
-                    .OrderBy(_ => artistRng.Next())
-                    .ToList();
-                foreach (var img in allImages)
-                {
-                    if (chosen.Count >= imageCount) break;
-                    if (!chosen.Contains(img))
-                        chosen.Add(img);
                 }
             }
 
             var basePrice = artist.PriceMin ?? 200;
             var maxPrice = artist.PriceMax ?? 800;
 
-            for (int j = 0; j < chosen.Count; j++)
+            int j = 0;
+            foreach (var img in chosen)
             {
                 var price = basePrice + rng.Next(0, maxPrice - basePrice);
                 price = (price / 10) * 10;
 
                 artist.PortfolioImages.Add(new ArtistPortfolioImage
                 {
-                    ImageUrl = chosen[j],
+                    ImageUrl = img,
                     Price = price,
-                    OrderNo = j,
+                    OrderNo = j++,
                 });
             }
         }
