@@ -121,11 +121,11 @@ using (var scope = app.Services.CreateScope())
 app.UseCors();
 app.UseRateLimiter();
 
-if (!app.Environment.IsDevelopment())
+app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    app.UseHsts();
-    app.UseHttpsRedirection();
-}
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                     | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 
 app.Use(async (context, next) =>
 {
