@@ -6,6 +6,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/landing")]
+[ResponseCache(Duration = 300)]
 public class LandingController : ControllerBase
 {
     private readonly AppDbContext _db;

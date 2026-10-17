@@ -65,6 +65,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
         builder.Entity<Artist>(e =>
         {
             e.HasIndex(a => a.Slug).IsUnique();
+            e.HasIndex(a => a.City);
+            e.HasIndex(a => a.OrderNo);
         });
 
         builder.Entity<ArtistStyle>(e =>
@@ -72,6 +74,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasOne(a => a.Artist)
                 .WithMany(a => a.ArtistStyles)
                 .HasForeignKey(a => a.ArtistId);
+            e.HasIndex(a => a.StyleName);
         });
 
         builder.Entity<ArtistPortfolioImage>(e =>

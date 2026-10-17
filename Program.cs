@@ -64,6 +64,8 @@ builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddHttpClient();
 
+builder.Services.AddResponseCaching();
+
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>();
 
@@ -104,14 +106,10 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-Console.WriteLine($"[Startup] Binding to port {port}");
-
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    Console.WriteLine("[Startup] Running migrations...");
     await db.Database.MigrateAsync();
-    Console.WriteLine("[Startup] Migrations complete");
 
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     string[] roles = ["SuperAdmin", "Admin", "Artist", "NormalUser"];
@@ -123,7 +121,6 @@ using (var scope = app.Services.CreateScope())
 
     await ModuleSeeder.SeedAsync(db);
     await PublicDataSeeder.SeedAsync(db);
-    Console.WriteLine("[Startup] Seeding complete");
 }
 
 app.UseCors();
@@ -144,11 +141,11 @@ app.Use(async (context, next) =>
     await next();
 });
 
+app.UseResponseCaching();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
 
-Console.WriteLine($"[Startup] App ready, listening on port {port}");
 app.Run();

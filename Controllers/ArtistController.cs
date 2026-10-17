@@ -6,6 +6,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/artists")]
+[ResponseCache(Duration = 60, VaryByQueryKeys = ["style", "search", "page", "pageSize"])]
 public class ArtistController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -13,8 +14,16 @@ public class ArtistController : ControllerBase
     public ArtistController(AppDbContext db) => _db = db;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? style, [FromQuery] string? search)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? style,
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 24)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 24;
+        if (pageSize > 100) pageSize = 100;
+
         var query = _db.Artists
             .Include(a => a.ArtistStyles)
             .Include(a => a.PortfolioImages.OrderBy(i => i.OrderNo))
@@ -34,7 +43,11 @@ public class ArtistController : ControllerBase
                 a.Name.ToLower().Contains(q) || a.City.ToLower().Contains(q));
         }
 
+        var totalCount = await query.CountAsync();
+
         var artists = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(a => new
             {
                 a.Name,
@@ -51,7 +64,14 @@ public class ArtistController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(artists);
+        return Ok(new
+        {
+            artists,
+            totalCount,
+            page,
+            pageSize,
+            totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+        });
     }
 
     [HttpGet("{slug}")]
