@@ -149,6 +149,10 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("City");
+
+                    b.HasIndex("OrderNo");
+
                     b.HasIndex("Slug")
                         .IsUnique();
 
@@ -309,6 +313,8 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ArtistId");
+
+                    b.HasIndex("StyleName");
 
                     b.ToTable("ArtistStyles");
                 });
